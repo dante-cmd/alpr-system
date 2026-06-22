@@ -147,6 +147,7 @@ data/           # Datasets y muestras
 
 ## Documentación adicional
 
+- [`ABOUT.md`](ABOUT.md) — información general, arquitectura, alcance y roadmap.
 - [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) — requerimientos, datasets y decisiones.
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — guía de despliegue, variables de entorno y troubleshooting.
 - [`docs/UVP.md`](docs/UVP.md) — Utility Validation Protocol de componentes.
