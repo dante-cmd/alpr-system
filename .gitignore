@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv
+.venv_test
+venv/
+env/
+
+# Models and datasets (large binaries, not versioned)
+models/*.pt
+models/*.onnx
+models/*.engine
+data/datasets/*
+!data/datasets/.gitkeep
+data/samples/*
+!data/samples/.gitkeep
+outputs/*
+!outputs/.gitkeep
+models/*
+!models/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Locust
+locust_report_*.html
+
+# Environment
+.env
+.env.local
+
+# Kimi plans (optional, keep local)
+.kimi/

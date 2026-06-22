@@ -1,0 +1,52 @@
+services:
+  alpr-api:
+    build:
+      context: ../..
+      dockerfile: alpr/docker/Dockerfile
+    image: alpr-system:latest
+    container_name: alpr-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ALPR_API_HOST=0.0.0.0
+      - ALPR_API_PORT=8000
+      - ALPR_LOG_LEVEL=INFO
+      - ALPR_JSON_LOGS=true
+      - ALPR_ENABLE_PROMETHEUS=true
+    volumes:
+      - ../../data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: alpr-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    profiles:
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: alpr-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    profiles:
+      - observability
+
+volumes:
+  grafana-storage:

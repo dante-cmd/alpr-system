@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALPR System — Panel de Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#0ea5e9', accent: '#22c55e' } } } };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); }
+    .tab-active { border-bottom: 2px solid #0ea5e9; color: #0ea5e9; }
+    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .loader { border: 3px solid rgba(255,255,255,0.1); border-left-color: #0ea5e9; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .plate-card { transition: all 0.2s; }
+    .plate-card:hover { transform: translateX(4px); }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">ALPR System</h1>
+          <p class="text-sm text-gray-400">Reconocimiento de placas Mercosur</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="health-badge" class="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-800 text-gray-300 flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+          <span>Conectando...</span>
+        </div>
+        <button onclick="window.open('/metrics','_blank')" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs font-medium transition">Prometheus</button>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="flex gap-6 border-b border-gray-800 mb-6 overflow-x-auto">
+      <button data-tab="image" class="tab-btn tab-active pb-3 text-sm font-medium whitespace-nowrap">Imagen</button>
+      <button data-tab="batch" class="tab-btn pb-3 text-sm font-medium text-gray-400 hover:text-gray-200 whitespace-nowrap">Batch</button>
+      <button data-tab="stream" class="tab-btn pb-3 text-sm font-medium text-gray-400 hover:text-gray-200 whitespace-nowrap">Stream en vivo</button>
+      <button data-tab="config" class="tab-btn pb-3 text-sm font-medium text-gray-400 hover:text-gray-200 whitespace-nowrap">Configuración</button>
+      <button data-tab="logs" class="tab-btn pb-3 text-sm font-medium text-gray-400 hover:text-gray-200 whitespace-nowrap">Logs</button>
+    </nav>
+
+    <!-- Image Tab -->
+    <section id="tab-image" class="tab-content fade-in">
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div class="glass rounded-2xl p-6 border border-gray-800">
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Subir imagen
+          </h2>
+          <div id="drop-zone" class="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center hover:border-primary hover:bg-gray-900/50 transition cursor-pointer">
+            <input type="file" id="image-input" accept="image/*" class="hidden" />
+            <svg class="w-12 h-12 mx-auto text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <p class="text-sm text-gray-400 mb-1">Arrastra una imagen o haz clic para seleccionar</p>
+            <p class="text-xs text-gray-500">JPG, PNG, WEBP</p>
+          </div>
+          <div id="image-preview-container" class="hidden mt-4">
+            <img id="image-preview" class="rounded-lg max-h-64 mx-auto object-contain border border-gray-800" />
+          </div>
+          <button id="detect-btn" class="mt-4 w-full py-2.5 rounded-lg bg-primary hover:bg-sky-600 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            Detectar placas
+          </button>
+        </div>
+
+        <div class="glass rounded-2xl p-6 border border-gray-800">
+          <h2 class="text-lg font-semibold mb-4">Resultado</h2>
+          <div id="image-result" class="text-sm text-gray-400">Sube una imagen para comenzar.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Batch Tab -->
+    <section id="tab-batch" class="tab-content hidden fade-in">
+      <div class="glass rounded-2xl p-6 border border-gray-800">
+        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          Procesamiento batch
+        </h2>
+        <input type="file" id="batch-input" multiple accept="image/*" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gray-800 file:text-gray-200 hover:file:bg-gray-700" />
+        <button id="batch-btn" class="mt-4 px-5 py-2.5 rounded-lg bg-primary hover:bg-sky-600 font-medium transition disabled:opacity-50" disabled>Procesar imágenes</button>
+        <div id="batch-results" class="mt-6 overflow-x-auto"></div>
+      </div>
+    </section>
+
+    <!-- Stream Tab -->
+    <section id="tab-stream" class="tab-content hidden fade-in">
+      <div class="grid xl:grid-cols-3 gap-6">
+        <!-- Controls -->
+        <div class="xl:col-span-1 glass rounded-2xl p-6 border border-gray-800 h-fit">
+          <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Fuente de video
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Fuente</label>
+              <select id="stream-source-type" class="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm focus:border-primary focus:outline-none">
+                <option value="webcam">Webcam local</option>
+                <option value="rtsp">Cámara IP (RTSP)</option>
+                <option value="file">Archivo de video</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Valor</label>
+              <input id="stream-source-value" type="text" value="0" class="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm focus:border-primary focus:outline-none" placeholder="0, rtsp://..., /path/video.mp4" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">Procesar 1/N frames</label>
+                <input id="stream-skip" type="number" min="1" value="3" class="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-400 mb-1">Max FPS</label>
+                <input id="stream-fps" type="number" min="0.5" max="60" step="0.5" value="2" class="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">ROI [x1, y1, x2, y2] (opcional)</label>
+              <input id="stream-roi" type="text" placeholder="200, 300, 1400, 900" class="w-full rounded-lg bg-gray-900 border border-gray-700 px-3 py-2 text-sm" />
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="stream-detect-vehicle" type="checkbox" checked class="rounded bg-gray-900 border-gray-700" />
+              <label for="stream-detect-vehicle" class="text-sm text-gray-300">Detectar vehículo primero</label>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button id="stream-start-btn" class="flex-1 py-2 rounded-lg bg-accent hover:bg-green-600 font-medium transition">Iniciar</button>
+              <button id="stream-stop-btn" class="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 font-medium transition">Detener</button>
+            </div>
+          </div>
+          <div id="stream-status" class="mt-4 text-xs text-gray-400"></div>
+        </div>
+
+        <!-- Viewer -->
+        <div class="xl:col-span-2 glass rounded-2xl p-6 border border-gray-800">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Vista en vivo</h2>
+            <div class="flex items-center gap-2 text-xs">
+              <span id="stream-fps-badge" class="px-2 py-1 rounded bg-gray-800 text-gray-300">-- FPS</span>
+              <span id="stream-processing-badge" class="hidden px-2 py-1 rounded bg-primary/20 text-primary">Procesando</span>
+            </div>
+          </div>
+          <div class="relative aspect-video bg-black rounded-xl overflow-hidden border border-gray-800 flex items-center justify-center">
+            <img id="stream-frame" class="absolute inset-0 w-full h-full object-contain hidden" />
+            <div id="stream-placeholder" class="text-gray-500 text-sm">El stream no está activo</div>
+          </div>
+
+          <h3 class="text-sm font-semibold mt-6 mb-3 text-gray-300">Placas detectadas</h3>
+          <div id="stream-plates" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div class="text-sm text-gray-500">Sin placas detectadas aún.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Config Tab -->
+    <section id="tab-config" class="tab-content hidden fade-in">
+      <div class="glass rounded-2xl p-6 border border-gray-800 max-w-3xl">
+        <h2 class="text-lg font-semibold mb-4">Configuración del pipeline</h2>
+        <p class="text-sm text-gray-400 mb-4">Estos parámetros se aplican en el servidor. Edita las variables de entorno o reinicia la API para cambiarlos.</p>
+        <div class="grid md:grid-cols-2 gap-4 text-sm">
+          <div class="bg-gray-900 rounded-lg p-3 border border-gray-800"><span class="text-gray-500">ALPR_DETECT_VEHICLE_FIRST</span><div class="font-mono text-primary">true</div></div>
+          <div class="bg-gray-900 rounded-lg p-3 border border-gray-800"><span class="text-gray-500">ALPR_CONF_THRESHOLD</span><div class="font-mono text-primary">0.5</div></div>
+          <div class="bg-gray-900 rounded-lg p-3 border border-gray-800"><span class="text-gray-500">ALPR_API_PORT</span><div class="font-mono text-primary">8000</div></div>
+          <div class="bg-gray-900 rounded-lg p-3 border border-gray-800"><span class="text-gray-500">ALPR_JSON_LOGS</span><div class="font-mono text-primary">false</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Logs Tab -->
+    <section id="tab-logs" class="tab-content hidden fade-in">
+      <div class="glass rounded-2xl p-6 border border-gray-800">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Logs de eventos</h2>
+          <button id="clear-logs" class="text-xs px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700">Limpiar</button>
+        </div>
+        <div id="logs-container" class="bg-black rounded-xl p-4 h-96 overflow-y-auto font-mono text-xs space-y-1 border border-gray-800"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+[console_scripts]
+alpr-api = alpr.api.main:main
+alpr-evaluate = alpr.eval.evaluate:main
+alpr-train-yolo = alpr.training.train_yolo:main

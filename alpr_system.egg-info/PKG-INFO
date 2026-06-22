@@ -1,0 +1,152 @@
+Metadata-Version: 2.4
+Name: alpr-system
+Version: 0.1.0
+Summary: Sistema ALPR en producción para placas Mercosur (CPU-Optimized)
+Author: ALPR Team
+License: MIT
+Keywords: alpr,anpr,license-plate,yolov8,paddleocr,mercosur
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: ultralytics>=8.3.0
+Requires-Dist: paddlepaddle>=2.6.0
+Requires-Dist: paddleocr>=2.9.0
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.32.0
+Requires-Dist: python-multipart>=0.0.17
+Requires-Dist: opencv-python-headless>=4.10.0
+Requires-Dist: numpy<3.0.0,>=1.26.0
+Requires-Dist: Pillow>=10.0.0
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: pydantic-settings>=2.6.0
+Requires-Dist: PyYAML>=6.0.1
+Requires-Dist: requests>=2.32.0
+Requires-Dist: prometheus-client>=0.21.0
+Requires-Dist: structlog>=24.4.0
+Requires-Dist: python-json-logger>=2.0.7
+Requires-Dist: scipy>=1.14.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.24.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+Requires-Dist: ruff>=0.7.0; extra == "dev"
+Requires-Dist: mypy>=1.13.0; extra == "dev"
+Requires-Dist: locust>=2.32.0; extra == "dev"
+Dynamic: license-file
+
+# ALPR System — Reconocimiento de Placas Mercosur
+
+Sistema de reconocimiento automático de placas vehiculares (ALPR/ANPR) orientado a producción, con pipeline basado en **YOLOv8** y **PaddleOCR PP-OCRv4**, optimizado para **CPU**.
+
+## Características
+
+- Detección de vehículos con YOLOv8n (COCO).
+- Detección de placas con detector YOLOv8 fine-tuned (modelo base incluido).
+- OCR robusto con PaddleOCR PP-OCRv4.
+- Validación sintáctica de formatos Mercosur.
+- API REST con FastAPI, métricas Prometheus y logs estructurados.
+- Docker reproducible y CI/CD con GitHub Actions.
+- Scripts de evaluación end-to-end y métricas de producción.
+
+## Requisitos
+
+- Python ≥ 3.10
+- Docker (opcional)
+- ~4 GB de RAM libres para inferencia CPU
+
+## Instalación local
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
+
+## Uso
+
+### API REST
+
+```bash
+python -m alpr.api.main
+```
+
+Endpoints:
+
+- `GET /health` — estado del servicio.
+- `GET /metrics` — métricas Prometheus.
+- `POST /detect` — detecta placas en una imagen.
+- `POST /batch/detect` — procesa múltiples imágenes.
+
+Ejemplo:
+
+```bash
+curl -X POST -F "file=@data/samples/auto.jpg" http://localhost:8000/detect
+```
+
+### Docker
+
+```bash
+docker compose -f alpr/docker/docker-compose.yml up --build
+```
+
+Con observabilidad (Prometheus + Grafana):
+
+```bash
+docker compose -f alpr/docker/docker-compose.yml --profile observability up --build
+```
+
+### Evaluación
+
+```bash
+python -m alpr.eval.evaluate \
+  --images data/datasets/test \
+  --annotations data/datasets/test_annotations.json \
+  --output outputs/eval_results.json
+```
+
+### Entrenamiento / Fine-tuning
+
+Para fine-tuning con datasets propios (UFPR-ALPR, RodoSol-ALPR):
+
+```bash
+python -m alpr.training.train_yolo --data data/datasets/plates.yaml --epochs 50
+```
+
+> Nota: el entrenamiento requiere GPU. Los scripts están listos para ejecutarse en un entorno con CUDA.
+
+## Métricas objetivo
+
+| Métrica | Objetivo |
+|---------|----------|
+| Exact Match (día) | ≥ 95 % |
+| Recall detección | ≥ 98 % |
+| Latencia p95 CPU | ≤ 300 ms |
+
+## Estructura del proyecto
+
+```text
+alpr/
+  api/          # FastAPI
+  core/         # Pipeline de inferencia
+  training/     # Scripts de entrenamiento
+  eval/         # Métricas y evaluación
+  docker/       # Dockerfiles y compose
+tests/          # Tests unitarios, integración y estrés
+models/         # Modelos descargados (no versionados)
+data/           # Datasets y muestras
+```
+
+## Documentación adicional
+
+- [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) — requerimientos, datasets y decisiones.
+- [`docs/UVP.md`](docs/UVP.md) — Utility Validation Protocol de componentes.
+
+## Licencia
+
+MIT — ver [`LICENSE`](LICENSE).
